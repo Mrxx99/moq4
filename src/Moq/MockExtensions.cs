@@ -55,5 +55,19 @@ namespace Moq
 
 			return invocationsOfMethod;
 		}
+
+		/// <summary>
+		/// 
+		/// </summary>
+		/// <typeparam name="T"></typeparam>
+		/// <param name="mock"></param>
+		/// <param name="methodCall"></param>
+		/// <returns></returns>
+		public static IEnumerable<IInvocation> GetMatchedInvocationsOf<T>(this Mock<T> mock, Expression<Action<T>> methodCall) where T : class
+		{
+			var invocations = Mock.GetMatchingInvocations(mock, methodCall);
+
+			return invocations;
+		}
 	}
 }

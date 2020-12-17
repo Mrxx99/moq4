@@ -91,9 +91,11 @@ namespace Moq.Tests
 			myMock.Object.OutInt(out int anInt);
 			myMock.Object.BoolAndParamsString(true);
 
-			var actualInvocationOnBoolAndParamsString = myMock.GetInvocationsOf(x => x.BoolAndParamsString(default));
+			myMock.Verify(x => x.BoolAndParamsString(true));
+
+			var actualInvocationOnBoolAndParamsString = myMock.GetMatchedInvocationsOf(x => x.BoolAndParamsString(true));
 			int ignoredInt;
-			var actualInvocationOnOutInt = myMock.GetInvocationsOf(x => x.OutInt(out ignoredInt));
+			var actualInvocationOnOutInt = myMock.GetMatchedInvocationsOf(x => x.OutInt(out ignoredInt));
 
 			Assert.Equal(new[] { myMock.Invocations[0], myMock.Invocations[2] }, actualInvocationOnBoolAndParamsString);
 			Assert.Equal(new[] { myMock.Invocations[1] }, actualInvocationOnOutInt);
@@ -107,8 +109,8 @@ namespace Moq.Tests
 			myMock.Object.OverloadedMethod("hi");
 			myMock.Object.OverloadedMethod("bye");
 
-			var actualInvocationOnRightOverload = myMock.GetInvocationsOf(x => x.OverloadedMethod(default(string)));
-			var actualInvocationOnWrongOverload = myMock.GetInvocationsOf(x => x.OverloadedMethod(default, default));
+			var actualInvocationOnRightOverload = myMock.GetMatchedInvocationsOf(x => x.OverloadedMethod(It.Is<string>(a => a == "hi" || a == "bye")));
+			var actualInvocationOnWrongOverload = myMock.GetMatchedInvocationsOf(x => x.OverloadedMethod(It.IsAny<string>(), It.IsAny<int>()));
 
 			Assert.Equal(myMock.Invocations, actualInvocationOnRightOverload);
 			Assert.Empty(actualInvocationOnWrongOverload);
@@ -119,11 +121,22 @@ namespace Moq.Tests
 		{
 			var myMock = new Mock<IMethods>(MockBehavior.Loose);
 
+			myMock.Setup(x => x.Generic<int>()).Returns(4);
+
+			var a = myMock.Object.Generic<int>();
+			//var b = myMock.Object.Generic<string>();
+
+			myMock.Verify(x => x.Generic<int>(), Times.Once);
+
 			myMock.Object.GenericMethod(5);
 
-			var actualInvocationOnInt = myMock.GetInvocationsOf(x => x.GenericMethod<int>(default));
-			var actualInvocationOnObject = myMock.GetInvocationsOf(x => x.GenericMethod<object>(default));
-			var actualInvocationOnDouble = myMock.GetInvocationsOf(x => x.GenericMethod<double>(default));
+			myMock.Verify(x => x.GenericMethod(It.IsAny<int>()));
+			myMock.Verify(x => x.GenericMethod(It.IsAny<object>()), Times.Never);
+			myMock.Verify(x => x.GenericMethod(It.IsAny<double>()), Times.Never);
+
+			var actualInvocationOnInt = myMock.GetMatchedInvocationsOf(x => x.GenericMethod(5));
+			var actualInvocationOnObject = myMock.GetMatchedInvocationsOf(x => x.GenericMethod<object>(It.IsAny<object>()));
+			var actualInvocationOnDouble = myMock.GetMatchedInvocationsOf(x => x.GenericMethod<double>(It.IsAny<double>()));
 
 			Assert.Equal(myMock.Invocations, actualInvocationOnInt);
 			Assert.Empty(actualInvocationOnObject);
@@ -231,6 +244,7 @@ namespace Moq.Tests
 			void OverloadedMethod(int arg);
 			void OverloadedMethod(string arg1, int arg2);
 			void GenericMethod<T>(T arg);
+			int Generic<T>();
 		}
 
 		public class WithReadOnlyProperty

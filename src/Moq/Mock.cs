@@ -511,6 +511,13 @@ namespace Moq
 			return count;
 		}
 
+		internal static IEnumerable<Invocation> GetMatchingInvocations(Mock mock, LambdaExpression expression)
+		{
+			var invocationCount = Mock.GetMatchingInvocationCount(mock, expression, out var invocationsToBeMarkedAsVerified);
+
+			return invocationsToBeMarkedAsVerified.Select(x => x.Item1);
+		}
+
 		#endregion
 
 		#region Setup
